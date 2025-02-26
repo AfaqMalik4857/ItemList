@@ -10,9 +10,9 @@ import {
 
 const ListInput = ({
   onSubmit,
-  initialValue = "",
-  buttonLabel = "Add",
-  showInput = false,
+  initialValue,
+  buttonLabel,
+  showInput,
   onShowInput,
 }) => {
   const [text, setText] = useState(initialValue);
@@ -43,10 +43,7 @@ const ListInput = ({
           </TouchableOpacity>
         </>
       ) : (
-        <TouchableOpacity
-          onPress={onShowInput}
-          style={[styles.button, styles.createButton]}
-        >
+        <TouchableOpacity onPress={onShowInput} style={styles.button}>
           <Text style={styles.buttonText}>Create Item</Text>
         </TouchableOpacity>
       )}
@@ -73,10 +70,6 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#2196F3",
     borderRadius: 5,
-    marginLeft: 10,
-  },
-  createButton: {
-    marginLeft: 120,
   },
   buttonText: {
     color: "#fff",
