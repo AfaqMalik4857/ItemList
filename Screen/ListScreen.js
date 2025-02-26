@@ -1,68 +1,81 @@
-import React, { useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import React from "react";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import ListComponent from "../Components/ListComponent";
 import ListInput from "../Components/ListInput";
+import {
+  addItem,
+  deleteItem,
+  startEditing,
+  updateItem,
+  showInputField,
+} from "../Redux/listSlice";
 
 const ListScreen = () => {
-  const [items, setItems] = useState([]);
-  const [editingItem, setEditingItem] = useState(null);
-  const [showInput, setShowInput] = useState(false);
+  const dispatch = useDispatch();
+  const { items, editingItem, showInput } = useSelector((state) => state.list);
 
-  const addItem = (text) => {
-    if (!text || text.trim() === "") return;
+  const handleAddOrUpdateItem = (text) => {
+    if (!text.trim()) return;
 
-    if (editingItem !== null && items[editingItem]) {
-      // Update existing item
-      const updatedItems = items.map((item, index) =>
-        index === editingItem ? { ...item, text } : item
-      );
-      setItems(updatedItems);
-      setEditingItem(null);
+    if (
+      editingItem !== null &&
+      editingItem >= 0 &&
+      editingItem < items.length
+    ) {
+      // Update the existing item safely
+      dispatch(updateItem({ index: editingItem, text }));
     } else {
-      // Add new item
-      setItems([...items, { text }]);
+      // Add a new item
+      dispatch(addItem(text));
     }
-    setShowInput(false);
-  };
-
-  const deleteItem = (index) => {
-    if (index >= 0 && index < items.length) {
-      const newItems = items.filter((_, i) => i !== index);
-      setItems(newItems);
-    }
-  };
-
-  const editItem = (index) => {
-    setEditingItem(index);
-    setShowInput(true);
-    // Scroll to top to show the input field
-    if (this.scrollViewRef) {
-      this.scrollViewRef.scrollTo({ y: 0, animated: true });
-    }
+    dispatch(showInputField(false)); // Hide input field after adding/updating item
   };
 
   return (
     <View style={styles.container}>
-      <ListInput
-        onSubmit={addItem}
-        initialValue={
-          editingItem !== null && items[editingItem]
-            ? items[editingItem].text
-            : ""
-        }
-        showInput={showInput || editingItem !== null}
-        onShowInput={() => setShowInput(true)}
-        buttonLabel={editingItem !== null ? "Update" : "Add"}
-      />
-      <ScrollView ref={(ref) => (this.scrollViewRef = ref)}>
-        {items.map((item, index) => (
-          <ListComponent
-            key={index}
-            item={item}
-            onEdit={() => editItem(index)}
-            onDelete={() => deleteItem(index)}
-          />
-        ))}
+      {!showInput && (
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => dispatch(showInputField(true))}
+        >
+          <Text style={styles.buttonText}>Create Item</Text>
+        </TouchableOpacity>
+      )}
+
+      {showInput && (
+        <ListInput
+          onSubmit={handleAddOrUpdateItem}
+          initialValue={
+            editingItem !== null ? items[editingItem]?.text || "" : ""
+          }
+          showInput={showInput}
+          onShowInput={() => dispatch(showInputField(true))}
+          buttonLabel={editingItem !== null ? "Update" : "Add"}
+        />
+      )}
+
+      <ScrollView>
+        {items.length > 0 ? (
+          items.map((item, index) => (
+            <ListComponent
+              key={index}
+              item={item}
+              onEdit={() => dispatch(startEditing(index))}
+              onDelete={() => dispatch(deleteItem(index))}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyMessage}>
+            <Text>No items found. Add a new item!</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -74,6 +87,24 @@ const styles = StyleSheet.create({
     marginTop: 30,
     padding: 20,
     backgroundColor: "#fff",
+  },
+  createButton: {
+    backgroundColor: "#3498db",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginBottom: 10,
+    width: "40%",
+    marginLeft: "30%",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  emptyMessage: {
+    alignItems: "center",
+    marginTop: 20,
   },
 });
 
